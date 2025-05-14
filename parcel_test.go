@@ -46,16 +46,12 @@ func TestAddGetDelete(t *testing.T) {
 	// get
 	// получите только что добавленную посылку, убедитесь в отсутствии ошибки
 	// проверьте, что значения всех полей в полученном объекте совпадают со значениями полей в переменной parcel
+	parcel.Number = id
+
 	storedParcel, err := store.Get(id)
 	require.NoError(t, err)
+	require.Equal(t, parcel, storedParcel)
 
-	require.Equal(t, parcel.Client, storedParcel.Client)
-	require.Equal(t, parcel.Status, storedParcel.Status)
-	require.Equal(t, parcel.Address, storedParcel.Address)
-	require.Equal(t, parcel.CreatedAt, storedParcel.CreatedAt)
-	// delete
-	// удалите добавленную посылку, убедитесь в отсутствии ошибки
-	// проверьте, что посылку больше нельзя получить из БД
 	err = store.Delete(id)
 	require.NoError(t, err)
 
@@ -133,13 +129,8 @@ func TestGetByClient(t *testing.T) {
 	client := randRange.Intn(10_000_000)
 	for i := range parcels {
 		parcels[i].Client = client
-	}
-	parcels[0].Client = client
-	parcels[1].Client = client
-	parcels[2].Client = client
 
-	// add
-	for i := 0; i < len(parcels); i++ {
+		// add
 		id, err := store.Add(parcels[i])
 		require.NoError(t, err)
 		require.NotZero(t, id)
@@ -164,9 +155,6 @@ func TestGetByClient(t *testing.T) {
 		// убедитесь, что значения полей полученных посылок заполнены верно
 		expected, ok := parcelMap[parcel.Number]
 		require.True(t, ok)
-
-		require.Equal(t, expected.Client, parcel.Client)
-		require.Equal(t, expected.Status, parcel.Status)
-		require.Equal(t, expected.Address, parcel.Address)
+		require.Equal(t, expected, parcel)
 	}
 }

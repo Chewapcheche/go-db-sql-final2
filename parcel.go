@@ -62,6 +62,9 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 		}
 		res = append(res, p)
 	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
 	return res, nil
 }
 
@@ -75,33 +78,41 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 func (s ParcelStore) SetAddress(number int, address string) error {
 	// реализуйте обновление адреса в таблице parcel
 	// менять адрес можно только если значение статуса registered
-	p, err := s.Get(number)
+	query := `UPDATE parcel SET address = ? WHERE number = ? AND status = ?`
+	result, err := s.db.Exec(query, address, number, ParcelStatusRegistered)
 	if err != nil {
 		return err
 	}
 
-	if p.Status != ParcelStatusRegistered {
-		return errors.New("received incrorrect status for setting address. Expected: registered")
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
 	}
 
-	query := `UPDATE parcel SET address = ? WHERE number = ?`
-	_, err = s.db.Exec(query, address, number)
-	return err
+	if rowsAffected == 0 {
+		return errors.New("unable to update address. Required status 'registered'")
+	}
+
+	return nil
 }
 
 func (s ParcelStore) Delete(number int) error {
 	// реализуйте удаление строки из таблицы parcel
 	// удалять строку можно только если значение статуса registered
-	p, err := s.Get(number)
+	query := `DELETE FROM parcel WHERE number = ? AND status = ?`
+	result, err := s.db.Exec(query, number, ParcelStatusRegistered)
 	if err != nil {
 		return err
 	}
 
-	if p.Status != ParcelStatusRegistered {
-		return errors.New("received incorrect status for deleting value. Expected: registered")
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
 	}
 
-	query := `DELETE FROM parcel WHERE number = ?`
-	_, err = s.db.Exec(query, number)
-	return err
+	if rowsAffected == 0 {
+		return errors.New("unable to delete. Required status 'registered'")
+	}
+
+	return nil
 }
